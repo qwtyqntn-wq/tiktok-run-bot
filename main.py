@@ -4,7 +4,6 @@ import os
 from threading import Thread
 from flask import Flask
 
-# יוצר שרת קטן כדי לעבוד על רנדר שהוא חינמי
 app = Flask('')
 @app.route('/')
 def home():
@@ -13,7 +12,6 @@ def home():
 def run_flask():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
 
-# הפעלת השרת ברקע
 Thread(target=run_flask).start()
 
 SESSION_ID = os.environ.get("TIKTOK_SESSION_ID")
@@ -24,6 +22,7 @@ HEADERS = {
 
 def check_and_reply():
     try:
+        # 1. סריקת תיבת ההודעות הרגילה
         response = requests.get("https://tiktok.com", headers=HEADERS).json()
         my_uid = response.get("my_uid")
         
@@ -35,9 +34,18 @@ def check_and_reply():
                 send_help(chat_id)
                 continue
             
-            sender_uid = latest_message.get("sender_uid")
-            if sender_uid != my_uid:
+            if latest_message.get("sender_uid") != my_uid:
                 send_help(chat_id)
+                
+        # 2. סריקת תיבת הבקשות (Requests) למי שלא חבר שלך
+        req_response = requests.get("https://tiktok.com", headers=HEADERS).json()
+        for req_chat in req_response.get("chat_list", []):
+            chat_id = req_chat.get("chat_id")
+            
+            # הבוט מאשר את הבקשה אוטומטית כדי להעביר אותה לצ'אט הרגיל
+            requests.post("https://tiktok.com", headers=HEADERS, json={"chat_id": chat_id})
+            # שולח את הודעת המצוקה
+            send_help(chat_id)
                 
     except Exception as e:
         print("Error:", e)
