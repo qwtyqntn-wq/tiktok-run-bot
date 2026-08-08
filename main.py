@@ -1,6 +1,20 @@
 import requests
 import time
 import os
+from threading import Thread
+from flask import Flask
+
+# יוצר שרת קטן כדי לעבוד על רנדר שהוא חינמי
+app = Flask('')
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+
+# הפעלת השרת ברקע
+Thread(target=run_flask).start()
 
 SESSION_ID = os.environ.get("TIKTOK_SESSION_ID")
 HEADERS = {
@@ -17,24 +31,22 @@ def check_and_reply():
             chat_id = chat.get("chat_id")
             latest_message = chat.get("latest_message", {})
             
-            # אם הצ'אט חדש לגמרי וריק
             if not latest_message:
-                send_run(chat_id)
+                send_help(chat_id)
                 continue
             
-            # אם מישהו אחר שלח את ההודעה האחרונה
             sender_uid = latest_message.get("sender_uid")
             if sender_uid != my_uid:
-                send_run(chat_id)
+                send_help(chat_id)
                 
     except Exception as e:
         print("Error:", e)
 
-def send_run(chat_id):
+def send_help(chat_id):
     try:
-        data = {"chat_id": chat_id, "text": "RUN", "type": 1}
+        data = {"chat_id": chat_id, "text": "HELP", "type": 1}
         requests.post("https://tiktok.com", headers=HEADERS, json=data)
-        print(f"Sent RUN to chat: {chat_id}")
+        print(f"Sent HELP to chat: {chat_id}")
         time.sleep(1) 
     except Exception as e:
         print("Failed to send message:", e)
